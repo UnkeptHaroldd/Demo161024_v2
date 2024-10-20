@@ -1,4 +1,5 @@
 ﻿using APIDemo161024.DTOS;
+using APIDemo161024.Helpers;
 using APIDemo161024.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -13,17 +14,25 @@ namespace APIDemo161024.Repositories
         private readonly UserManager<User> userManager;
         private readonly SignInManager<User> signInManager;
         private readonly IConfiguration configuration;
+        private readonly RoleManager<IdentityRole> roleManager;
 
         public AccountRepository(UserManager<User> userManager,
-            SignInManager<User> signInManager, IConfiguration configuration) 
+            SignInManager<User> signInManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager) 
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
             this.configuration = configuration;
+            this.roleManager = roleManager;
         }
 
         public async Task<string> SignIn(SignInModel model)
         {
+            var user = await userManager.FindByEmailAsync(model.Email);
+            if(user == null)
+            {
+                return string.Empty;
+            }
+
             var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
 
             if (!result.Succeeded)
@@ -31,12 +40,19 @@ namespace APIDemo161024.Repositories
                 return string.Empty;
             }
 
+            var userRoles = await userManager.GetRolesAsync(user);
+
             var authClaims = new List<Claim> 
             { 
               new Claim(ClaimTypes.Email, model.Email),
               new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid()
               .ToString()),
             };
+
+            foreach (var role in userRoles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+            }
 
             var authenKey = new SymmetricSecurityKey
                 (Encoding.UTF8.GetBytes(configuration["JWT:SecretKey"]));
@@ -65,7 +81,20 @@ namespace APIDemo161024.Repositories
                 UserName = model.Email
             };
 
-            return await userManager.CreateAsync(user, model.Password);
+            var result = await userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+                //Check role if == Customer
+                if(!await roleManager.RoleExistsAsync(AppRole.Admin))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(AppRole.Admin));
+                }
+
+                await userManager.AddToRoleAsync(user, AppRole.Admin);
+            }
+
+            return result;
         }
     }
 }
