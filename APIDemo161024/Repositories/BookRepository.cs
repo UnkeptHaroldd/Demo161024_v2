@@ -17,6 +17,11 @@ namespace APIDemo161024.Repositories
             _mapper = mapper;
         }
 
+        public BookRepository()
+        {
+
+        }
+
         public async Task<int> AddBookAsync(BookModel model)
         {
             var newBook = _mapper.Map<Book>(model);

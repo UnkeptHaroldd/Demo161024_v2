@@ -47,7 +47,7 @@ namespace APIDemo161024.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Adminstrator")]
+        [Authorize]
         public async Task<IActionResult> AddNewBook(BookModel model)
         {
             try
@@ -63,7 +63,7 @@ namespace APIDemo161024.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Adminstrator")]
+        [Authorize]
         public async Task<IActionResult> UpdateBook(int id, [FromBody] BookModel model)
         {
             if (id != model.Id)
@@ -75,7 +75,7 @@ namespace APIDemo161024.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Adminstrator")]
+        [Authorize]
         public async Task<IActionResult> DeleteBook([FromRoute] int id)
         {
             await _bookRepo.DeleteBookAsync(id);

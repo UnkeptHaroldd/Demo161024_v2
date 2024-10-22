@@ -8,7 +8,14 @@ namespace APIDemo161024.DatabaseConnect
     {
 
         public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options) : base(options) { }
-
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            var builder = new ConfigurationBuilder().
+                SetBasePath(AppContext.BaseDirectory).
+                AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            IConfiguration configuration = builder.Build();
+            optionsBuilder.UseSqlServer(configuration.GetConnectionString("DatabaseContext"));
+        }
         public DbSet<Book> Book { get; set; }
 
      
